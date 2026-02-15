@@ -1,18 +1,35 @@
 package com.prasad.syncboard.controller;
 
-@org.springframework.web.bind.annotation.RestController
-@org.springframework.web.bind.annotation.RequestMapping("/api/tasks")
-public class TaskController {
-    @org.springframework.beans.factory.annotation.Autowired
-    private com.prasad.syncboard.service.TaskService taskService;
+import com.prasad.syncboard.entity.Task;
+import com.prasad.syncboard.service.TaskService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
-    @org.springframework.web.bind.annotation.GetMapping
-    public java.util.List<com.prasad.syncboard.entity.Task> getTasks() {
-        return taskService.getAllTasks();
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/tasks")
+public class TaskController {
+
+    @Autowired
+    private TaskService taskService;
+
+    // This is the "Megaphone" that sends messages to WebSockets
+    @Autowired
+    private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
+    @PostMapping
+    public Task createTask(@RequestBody Task task) {
+        Task savedTask = taskService.saveTask(task);
+
+        // This broadcasts the saved task to anyone listening to "/topic/tasks"
+        messagingTemplate.convertAndSend("/topic/tasks", savedTask);
+
+        return savedTask;
     }
 
-    @org.springframework.web.bind.annotation.PostMapping
-    public com.prasad.syncboard.entity.Task createTask(@org.springframework.web.bind.annotation.RequestBody com.prasad.syncboard.entity.Task task) {
-        return taskService.saveTask(task);
+    @GetMapping
+    public List<Task> getTasks() {
+        return taskService.getAllTasks();
     }
 }

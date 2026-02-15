@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SyncBoard AI - Real Time</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body style="font-family: sans-serif; padding: 20px;">
+<h2>SyncBoard Real-Time Feed</h2>
+<div id="status" style="color: red;">Connecting...</div>
+
+<ul id="task-list">
+</ul>
+
+<script>
+    var socket = new SockJS('/ws-syncboard');
+    var stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+        document.getElementById('status').innerText = "Connected! Waiting for tasks...";
+        document.getElementById('status').style.color = "green";
+
+        // Listen for broadcasts from the server
+        stompClient.subscribe('/topic/tasks', function (response) {
+            var task = JSON.parse(response.body);
+            showTask(task);
+        });
+    });
+
+    function showTask(task) {
+        var list = document.getElementById('task-list');
+        var entry = document.createElement('li');
+        entry.innerHTML = `<strong>${task.title}</strong>: ${task.description}
+                           <span style="color: blue;">[${task.status}]</span>`;
+        list.appendChild(entry);
+    }
+</script>
+</body>
+</html>
