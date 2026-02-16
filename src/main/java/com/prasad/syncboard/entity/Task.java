@@ -1,12 +1,21 @@
-package com.prasad.syncboard.entity;
+package com.prasad.syncboard.entity; // Ensure this matches your folder!
 
-@jakarta.persistence.Entity
-@lombok.Data
+import jakarta.persistence.*;
+import lombok.Data;
+
+@Entity
+@Data // This automatically creates getTitle() and setDescription()
 public class Task {
-    @jakarta.persistence.Id
-    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String title;
     private String description;
-    private String status; // e.g.,TODO, IN_PROGRESS, DONE
+    private String status;
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }

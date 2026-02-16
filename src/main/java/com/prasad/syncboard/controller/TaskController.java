@@ -1,6 +1,7 @@
 package com.prasad.syncboard.controller;
 
 import com.prasad.syncboard.entity.Task;
+import com.prasad.syncboard.service.AiService;
 import com.prasad.syncboard.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -31,5 +32,23 @@ public class TaskController {
     @GetMapping
     public List<Task> getTasks() {
         return taskService.getAllTasks();
+    }
+    @Autowired
+    private AiService aiService;
+
+    @PostMapping("/ai-generate")
+    public Task createAiTask(@RequestBody Task task) {
+        System.out.println("AI Task Request received for: " + task.getTitle());
+        // 1. Use AI to generate a professional description
+        String enhancedDescription = aiService.enhanceTaskDescription(task.getTitle());
+        task.setDescription(enhancedDescription);
+
+        // 2. Save to Database
+        Task savedTask = taskService.saveTask(task);
+
+        // 3. Broadcast to WebSockets
+        messagingTemplate.convertAndSend("/topic/tasks", savedTask);
+
+        return savedTask;
     }
 }
