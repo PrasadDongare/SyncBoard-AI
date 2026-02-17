@@ -51,4 +51,34 @@ public class TaskController {
 
         return savedTask;
     }
+
+    @PatchMapping("/{id}/next")
+    public Task moveTaskToNextStatus(@PathVariable Long id) {
+        Task task = taskService.getTaskById(id);
+
+        String currentStatus = task.getStatus();
+        if ("TODO".equals(currentStatus)) {
+            task.setStatus("IN_PROGRESS");
+        } else if ("IN_PROGRESS".equals(currentStatus)) {
+            task.setStatus("DONE");
+        }
+        Task updatedTask = taskService.saveTask(task);
+
+        // Broadcast the update so the UI moves the card in real-time
+        messagingTemplate.convertAndSend("/topic/tasks", updatedTask);
+
+        return updatedTask;
+    }
+    @DeleteMapping("/{id}")
+    public void deleteTask(@PathVariable Long id) {
+        taskService.deleteTask(id); // Implement this in Service (repository.deleteById(id))
+
+        // Broadcast a special 'deleted' message to the WebSocket
+        // We send the ID so the frontend knows which card to vanish
+        Task deletedSignal = new Task();
+        deletedSignal.setId(id);
+        deletedSignal.setDeleted(true);
+
+        messagingTemplate.convertAndSend("/topic/tasks", deletedSignal);
+    }
 }

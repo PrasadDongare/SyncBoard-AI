@@ -3,123 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SyncBoard AI | Collaborative Workspace</title>
+    <title>SyncBoard AI | Real-Time Workspace</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        .kanban-column { min-height: 70vh; }
+        .task-card { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-slate-50 min-h-screen font-sans">
+
 <nav class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm">
-    <h1 class="text-2xl font-bold text-indigo-600">SyncBoard <span class="text-slate-400">AI</span></h1>
-    <div id="connection-status" class="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600">Disconnected</div>
+    <h1 class="text-2xl font-bold text-indigo-600">SyncBoard <span class="text-slate-400 font-light">AI</span></h1>
+    <div id="connection-status" class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-600">
+        Connecting...
+    </div>
 </nav>
+
 <div class="px-8 mt-6">
-    <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-all flex items-center">
-        <span class="mr-2">+</span> New Task
+    <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium shadow-md transition-all">
+        + New Task
     </button>
 </div>
 
-<div id="taskModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-        <h3 class="text-xl font-bold text-slate-800 mb-4">Create New Task</h3>
-        <div class="space-y-4">
-            <input id="taskTitle" type="text" placeholder="Task Title (e.g. Build API)" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+<main class="p-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-            <div class="flex gap-2">
-                <button onclick="submitTask(false)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 rounded-lg transition-colors">
-                    Save Manual
-                </button>
-                <button onclick="submitTask(true)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center">
-                    ✨ AI Generate
-                </button>
+        <div class="flex flex-col">
+            <div class="flex items-center mb-4">
+                <span class="w-3 h-3 bg-yellow-400 rounded-full mr-2"></span>
+                <h2 class="font-bold text-slate-700 uppercase tracking-wide">To Do</h2>
             </div>
-        </div>
-        <button onclick="closeModal()" class="mt-4 text-sm text-slate-400 hover:text-slate-600 w-full text-center">Cancel</button>
-    </div>
-</div>
-
-<main class="p-8 h-[calc(100vh-80px)] overflow-hidden">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
-
-        <div class="bg-slate-200/50 p-4 rounded-lg flex flex-col">
-            <h2 class="font-bold text-slate-700 mb-4 flex items-center">
-                <span class="w-2 h-2 bg-yellow-400 rounded-full mr-2"></span> TO DO
-            </h2>
-            <div id="TODO-list" class="space-y-3 overflow-y-auto flex-1"></div>
+            <div id="TODO-list" class="kanban-column space-y-4 bg-slate-200/40 p-4 rounded-xl border-2 border-dashed border-slate-200"></div>
         </div>
 
-        <div class="bg-slate-200/50 p-4 rounded-lg flex flex-col">
-            <h2 class="font-bold text-slate-700 mb-4 flex items-center">
-                <span class="w-2 h-2 bg-indigo-500 rounded-full mr-2"></span> IN PROGRESS
-            </h2>
-            <div id="IN_PROGRESS-list" class="space-y-3 overflow-y-auto flex-1"></div>
+        <div class="flex flex-col">
+            <div class="flex items-center mb-4">
+                <span class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
+                <h2 class="font-bold text-slate-700 uppercase tracking-wide">In Progress</h2>
+            </div>
+            <div id="IN_PROGRESS-list" class="kanban-column space-y-4 bg-slate-200/40 p-4 rounded-xl border-2 border-dashed border-slate-200"></div>
         </div>
 
-        <div class="bg-slate-200/50 p-4 rounded-lg flex flex-col">
-            <h2 class="font-bold text-slate-700 mb-4 flex items-center">
-                <span class="w-2 h-2 bg-emerald-500 rounded-full mr-2"></span> DONE
-            </h2>
-            <div id="DONE-list" class="space-y-3 overflow-y-auto flex-1"></div>
+        <div class="flex flex-col">
+            <div class="flex items-center mb-4">
+                <span class="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
+                <h2 class="font-bold text-slate-700 uppercase tracking-wide">Done</h2>
+            </div>
+            <div id="DONE-list" class="kanban-column space-y-4 bg-slate-200/40 p-4 rounded-xl border-2 border-dashed border-slate-200"></div>
         </div>
 
     </div>
 </main>
 
+<div id="taskModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+        <h3 class="text-2xl font-bold text-slate-800 mb-2">Create Task</h3>
+        <p class="text-slate-500 mb-6 text-sm">Add a task manually or let AI generate the details.</p>
+
+        <input id="taskTitle" type="text" placeholder="What needs to be done?"
+               class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="submitTask(false)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition-all">
+                Manual Save
+            </button>
+            <button onclick="submitTask(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-indigo-200">
+                ✨ AI Generate
+            </button>
+        </div>
+        <button onclick="closeModal()" class="mt-6 text-slate-400 hover:text-slate-600 text-sm w-full font-medium">Dismiss</button>
+    </div>
+</div>
+
 <script>
     const socket = new SockJS('/ws-syncboard');
     const stompClient = Stomp.over(socket);
+    stompClient.debug = null; // Clean console
 
     stompClient.connect({}, () => {
         const status = document.getElementById('connection-status');
         status.innerText = "● Live Sync Active";
-        status.className = "px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-600";
+        status.className = "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-600";
 
         stompClient.subscribe('/topic/tasks', (response) => {
             const task = JSON.parse(response.body);
-            addTaskToUI(task);
+            if (task.deleted) {
+                removeTaskFromUI(task.id);
+            } else {
+                addTaskToUI(task);
+            }
         });
     });
 
     function addTaskToUI(task) {
+        removeTaskFromUI(task.id); // Clear existing before adding
         const container = document.getElementById(`${task.status}-list`);
         if (!container) return;
 
         const card = document.createElement('div');
-        card.className = "bg-white p-4 rounded shadow-sm border-l-4 border-indigo-500 transition-all hover:shadow-md animate-in fade-in slide-in-from-top-2";
+        card.id = `task-${task.id}`;
+        card.className = "task-card bg-white p-5 rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md group";
+
+        const nextBtn = task.status !== 'DONE'
+            ? `<button onclick="moveTask(${task.id})" class="p-1 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-600 hover:text-white transition-colors"> → </button>`
+            : `<span class="text-emerald-500">✓</span>`;
+
         card.innerHTML = `
-            <h3 class="font-semibold text-slate-800">${task.title}</h3>
-            <p class="text-sm text-slate-500 mt-1">${task.description}</p>
-            <div class="mt-3 flex justify-between items-center">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">ID: #${task.id}</span>
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-slate-800 leading-tight">${task.title}</h3>
+                <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="deleteTask(${task.id})" class="text-slate-300 hover:text-red-500">🗑</button>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">${task.description || 'No description provided.'}</p>
+            <div class="flex justify-between items-center border-t pt-3">
+                <span class="text-[9px] font-black text-slate-300 uppercase italic">#SB-${task.id}</span>
+                ${nextBtn}
             </div>
         `;
         container.appendChild(card);
     }
 
-    // Fetch existing tasks on load
-    fetch('/api/tasks').then(res => res.json()).then(tasks => tasks.forEach(addTaskToUI));
-    function openModal() { document.getElementById('taskModal').classList.remove('hidden'); }
-function closeModal() { document.getElementById('taskModal').classList.add('hidden'); }
-
-async function submitTask(useAi) {
-    const title = document.getElementById('taskTitle').value;
-    if (!title) return alert("Please enter a title");
-
-    const endpoint = useAi ? '/api/tasks/ai-generate' : '/api/tasks';
-
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title, status: 'TODO' })
-    });
-
-    if (response.ok) {
-        document.getElementById('taskTitle').value = '';
-        closeModal();
-        // Note: We don't need to manually refresh the list here because
-        // the WebSocket will broadcast the new task to us automatically!
+    function removeTaskFromUI(id) {
+        const el = document.getElementById(`task-${id}`);
+        if (el) el.remove();
     }
-}
+
+    async function submitTask(useAi) {
+        const title = document.getElementById('taskTitle').value;
+        if (!title) return;
+        const endpoint = useAi ? '/api/tasks/ai-generate' : '/api/tasks';
+        await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, status: 'TODO' })
+        });
+        closeModal();
+        document.getElementById('taskTitle').value = '';
+    }
+
+    async function moveTask(id) { await fetch(`/api/tasks/${id}/next`, { method: 'PATCH' }); }
+    async function deleteTask(id) { if(confirm("Delete task?")) await fetch(`/api/tasks/${id}`, { method: 'DELETE' }); }
+
+    function openModal() { document.getElementById('taskModal').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('taskModal').classList.add('hidden'); }
+
+    // Initial Load
+    fetch('/api/tasks').then(r => r.json()).then(tasks => tasks.forEach(addTaskToUI));
 </script>
 </body>
 </html>
